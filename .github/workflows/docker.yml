@@ -1,0 +1,71 @@
+name: 'Build & Push Docker Image'
+
+# Controls when the action will run. 
+on:
+  push:
+    branches: [ docker ]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Global environent variables available for all jobs
+env:
+  CI: true
+  DOCKER_BUILDKIT: 1
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+
+  # This workflow contains a single job called "docker"
+  docker:
+  
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Build Image
+        run: |
+          cp -r files/Dockerfile .
+          curl -fsSL https://github.com/kasroudra/pyphisher/releases/latest/download/websites.zip -o websites.zip
+          unzip websites.zip -d sites
+          # Build Docker Image for DockerHub
+          docker build --tag kasroudra/pyphisher:latest .
+          [ -n "$DOCKER_VERSION" ] && docker build --tag kasroudra/pyphisher:${DOCKER_VERSION} . || echo
+
+          # Tag Docker Image for GHCR
+          docker tag kasroudra/pyphisher:latest ghcr.io/kasroudra/pyphisher:latest
+          [ -n "$DOCKER_VERSION" ] && docker tag kasroudra/pyphisher:${DOCKER_VERSION} ghcr.io/kasroudra/pyphisher:${DOCKER_VERSION} || echo
+        env:
+          DOCKER_VERSION: ${{ secrets.DOCKER_VERSION }}
+
+      - name: Login to GHCR
+        # Only allow main branch
+        if: github.repository == 'KasRoudra/PyPhisher' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to DockerHub
+        if: github.repository == 'KasRoudra/PyPhisher' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v2
+        with:
+          username: "kasroudra"
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Push
+        if: github.repository == 'KasRoudra/PyPhisher' && github.ref == 'refs/heads/main'
+        run: |
+          # Push to DockerHub
+          [ -n "$DOCKER_VERSION" ] && docker push kasroudra/pyphisher:${DOCKER_VERSION} || echo
+          docker push kasroudra/pyphisher:latest
+          # Push to GHCR
+          [ -n "$DOCKER_VERSION" ] && docker push ghcr.io/kasroudra/pyphisher:${DOCKER_VERSION} || echo
+          docker push ghcr.io/kasroudra/pyphisher:latest
+        env:
+          DOCKER_VERSION: ${{ secrets.DOCKER_VERSION }}

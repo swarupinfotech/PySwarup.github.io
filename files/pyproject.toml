@@ -1,0 +1,31 @@
+[build-system]
+requires = [
+    "setuptools>=58.0.4",
+    "wheel>=0.37.0"
+]
+build-backend = "setuptools.build_meta"
+
+[tool.poetry]
+name = "PyPhisher"
+version = "2.1.7"
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/swarupinfotech/PySwarup.github.io.git"
+include = ["README.md", "LICENSE", "files/email.json"]
+description = "Ultimate phishing tool in python with dual tunneling, 77 templates and many more!"
+authors = ["Swarup <swarupinfotech1@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+requests = "^2.3.0"
+rich = "^13.0.0"
+beautifulsoup4 = "^4.12"
+
+[tool.poetry.scripts]
+pyphisher = "pyphisher:main"
+
+[build-system.sdist]
+formats = ["gztar"]
+
+[build-system.bdist_wheel]
+universal = false
